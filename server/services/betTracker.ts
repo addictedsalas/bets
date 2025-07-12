@@ -5,17 +5,28 @@ import * as path from 'path';
 export class BetTracker {
   private betsFile: string;
   private bets: PlacedBet[] = [];
+  private readonly isReadOnly: boolean;
 
   constructor() {
     this.betsFile = path.join(process.cwd(), 'data', 'bets.json');
-    this.ensureDataDirectory();
-    this.loadBets();
+    this.isReadOnly = process.env.NODE_ENV === 'production';
+    
+    if (!this.isReadOnly) {
+      this.ensureDataDirectory();
+      this.loadBets();
+    } else {
+      console.log('📝 BetTracker running in read-only mode (production environment)');
+    }
   }
 
   private ensureDataDirectory(): void {
-    const dataDir = path.dirname(this.betsFile);
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
+    try {
+      const dataDir = path.dirname(this.betsFile);
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+      }
+    } catch (error) {
+      console.warn('⚠️ Could not create data directory:', error);
     }
   }
 
@@ -32,6 +43,11 @@ export class BetTracker {
   }
 
   private saveBets(): void {
+    if (this.isReadOnly) {
+      console.warn('⚠️ Cannot save bets in read-only mode');
+      return;
+    }
+    
     try {
       fs.writeFileSync(this.betsFile, JSON.stringify(this.bets, null, 2));
     } catch (error) {

@@ -2,6 +2,7 @@ import { PlacedBet, BetStats } from '../types';
 export declare class BetTracker {
     private betsFile;
     private bets;
+    private readonly isReadOnly;
     constructor();
     private ensureDataDirectory;
     private loadBets;
