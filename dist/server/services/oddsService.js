@@ -212,9 +212,22 @@ class OddsService {
                         this.gameCache.updateGame(scheduled.gameId, game);
                         activeGames.push(game);
                         console.log(`✅ FANDUEL GAME: ${game.away_team} @ ${game.home_team} - ${scheduled.sport}`);
-                        // Log 3rd quarter detection
-                        if (this.isThirdQuarterSevenMinutes(game)) {
-                            console.log(`🎯 3RD QUARTER TARGET: ${game.away_team} @ ${game.home_team} at Q${game.scores?.period} ${game.scores?.time_remaining}!`);
+                        // Enhanced debugging for game state
+                        if (game.scores) {
+                            console.log(`📊 GAME STATE: Q${game.scores.period} ${game.scores.time_remaining} | Home: ${game.scores.home_score} Away: ${game.scores.away_score}`);
+                            // Debug Q3 detection specifically
+                            if (game.scores.period === 3) {
+                                console.log(`🎯 Q3 GAME DETECTED: ${game.away_team} @ ${game.home_team}`);
+                                console.log(`⏰ Time remaining: "${game.scores.time_remaining}"`);
+                                const isTarget = this.isThirdQuarterSevenMinutes(game);
+                                console.log(`🎲 Is ~7min target: ${isTarget}`);
+                                if (isTarget) {
+                                    console.log(`🚨 3RD QUARTER TARGET CONFIRMED: ${game.away_team} @ ${game.home_team} at Q${game.scores.period} ${game.scores.time_remaining}!`);
+                                }
+                            }
+                        }
+                        else {
+                            console.log(`⚠️ No scores data for: ${game.away_team} @ ${game.home_team}`);
                         }
                     }
                     else {
@@ -275,24 +288,39 @@ class OddsService {
         }
     }
     isThirdQuarterSevenMinutes(game) {
-        if (!game.scores)
+        if (!game.scores) {
+            console.log(`❌ Q3 Check: No scores data`);
             return false;
+        }
         const { period, time_remaining } = game.scores;
         // Period 3 = 3rd quarter
-        if (period !== 3)
+        if (period !== 3) {
+            console.log(`❌ Q3 Check: Not Q3 (period ${period})`);
             return false;
-        if (!time_remaining)
+        }
+        if (!time_remaining) {
+            console.log(`❌ Q3 Check: No time_remaining data`);
             return false;
+        }
+        console.log(`🔍 Q3 Check: Parsing time "${time_remaining}"`);
         // Parse time remaining (format: "MM:SS" or "M:SS")
         const timeMatch = time_remaining.match(/(\d+):(\d+)/);
-        if (!timeMatch)
+        if (!timeMatch) {
+            console.log(`❌ Q3 Check: Failed to parse time format "${time_remaining}"`);
             return false;
+        }
         const minutes = parseInt(timeMatch[1]);
         const seconds = parseInt(timeMatch[2]);
+        console.log(`🔍 Q3 Check: Parsed ${minutes}:${seconds.toString().padStart(2, '0')}`);
         // Check if exactly 7 minutes remaining (6:30 - 7:30 range for buffer)
         const totalSeconds = minutes * 60 + seconds;
         const sevenMinutes = 7 * 60;
-        return totalSeconds >= (sevenMinutes - 30) && totalSeconds <= (sevenMinutes + 30);
+        const lowerBound = sevenMinutes - 30; // 6:30
+        const upperBound = sevenMinutes + 30; // 7:30
+        console.log(`🔍 Q3 Check: ${totalSeconds}s total (target: ${lowerBound}-${upperBound}s)`);
+        const isInRange = totalSeconds >= lowerBound && totalSeconds <= upperBound;
+        console.log(`🎲 Q3 Check Result: ${isInRange ? 'MATCH ✅' : 'NO MATCH ❌'}`);
+        return isInRange;
     }
     getRequestCount() {
         return this.requestCount;

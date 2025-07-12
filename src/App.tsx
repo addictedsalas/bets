@@ -27,7 +27,10 @@ function App() {
 
   useEffect(() => {
     // Only use Socket.io in development, not in production
-    if (process.env.NODE_ENV !== 'production') {
+    // Check for localhost to determine if we're in development
+    const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    if (isDevelopment) {
       const socketUrl = 'http://localhost:3000';
       const newSocket = io(socketUrl);
       setSocket(newSocket);
@@ -57,7 +60,10 @@ function App() {
       // Set up polling for opportunities
       const pollOpportunities = () => {
         fetch('/api/opportunities')
-          .then(res => res.json())
+          .then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+          })
           .then(data => setOpportunities(data))
           .catch(err => console.error('Error polling opportunities:', err));
       };
@@ -72,9 +78,13 @@ function App() {
   useEffect(() => {
     // Fetch initial data
     Promise.all([
-      fetch('/api/opportunities').then(res => res.json()),
-      fetch('/api/bets').then(res => res.json()),
-      fetch('/api/bets/stats').then(res => res.json())
+      fetch('/api/opportunities').then(res => res.ok ? res.json() : []),
+      fetch('/api/bets').then(res => res.ok ? res.json() : []),
+      fetch('/api/bets/stats').then(res => res.ok ? res.json() : {
+        totalBets: 0, totalWagers: 0, totalPayout: 0, netProfit: 0,
+        winCount: 0, lossCount: 0, pendingCount: 0, winPercentage: 0,
+        averageBetSize: 0, biggestWin: 0, biggestLoss: 0, roi: 0
+      })
     ]).then(([opportunitiesData, betsData, statsData]) => {
       setOpportunities(opportunitiesData);
       setBets(betsData);
