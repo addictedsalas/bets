@@ -26,27 +26,50 @@ function App() {
   });
 
   useEffect(() => {
-    const socketUrl = process.env.NODE_ENV === 'production' 
-      ? 'https://genbetstracker2.vercel.app' 
-      : 'http://localhost:3000';
-    const newSocket = io(socketUrl);
-    setSocket(newSocket);
+    // Only use Socket.io in development, not in production
+    if (process.env.NODE_ENV !== 'production') {
+      const socketUrl = 'http://localhost:3000';
+      const newSocket = io(socketUrl);
+      setSocket(newSocket);
 
-    newSocket.on('connect', () => {
+      newSocket.on('connect', () => {
+        setConnectionStatus('connected');
+        console.log('Connected to server');
+      });
+
+      newSocket.on('disconnect', () => {
+        setConnectionStatus('disconnected');
+        console.log('Disconnected from server');
+      });
+
+      newSocket.on('opportunities-update', (data: BetOpportunity[]) => {
+        setOpportunities(data);
+        console.log('Opportunities updated:', data);
+      });
+
+      return () => {
+        newSocket.close();
+      };
+    } else {
+      // In production, use polling instead of WebSocket
       setConnectionStatus('connected');
-      console.log('Connected to server');
-    });
+      
+      // Set up polling for opportunities
+      const pollOpportunities = () => {
+        fetch('/api/opportunities')
+          .then(res => res.json())
+          .then(data => setOpportunities(data))
+          .catch(err => console.error('Error polling opportunities:', err));
+      };
 
-    newSocket.on('disconnect', () => {
-      setConnectionStatus('disconnected');
-      console.log('Disconnected from server');
-    });
+      // Poll every 30 seconds
+      const interval = setInterval(pollOpportunities, 30000);
+      
+      return () => clearInterval(interval);
+    }
+  }, []);
 
-    newSocket.on('opportunities-update', (data: BetOpportunity[]) => {
-      setOpportunities(data);
-      console.log('Opportunities updated:', data);
-    });
-
+  useEffect(() => {
     // Fetch initial data
     Promise.all([
       fetch('/api/opportunities').then(res => res.json()),
@@ -57,10 +80,6 @@ function App() {
       setBets(betsData);
       setBetStats(statsData);
     }).catch(err => console.error('Error fetching initial data:', err));
-
-    return () => {
-      newSocket.close();
-    };
   }, []);
 
   const handlePlaceBet = async (betData: Omit<PlacedBet, 'id' | 'placedAt' | 'status'>) => {

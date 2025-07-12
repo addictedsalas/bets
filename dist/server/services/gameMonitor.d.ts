@@ -9,7 +9,7 @@ export declare class GameMonitor {
     private io;
     private processedGames;
     private currentOpportunities;
-    constructor(oddsService: OddsService, telegramService: TelegramService, betAnalyzer: BetAnalyzer, io: Server);
+    constructor(oddsService: OddsService, telegramService: TelegramService, betAnalyzer: BetAnalyzer, io: Server | null);
     checkGames(): Promise<void>;
     private analyzeGame;
     private sendTelegramNotification;

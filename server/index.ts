@@ -14,14 +14,17 @@ dotenv.config();
 
 const app = express();
 const server = createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: process.env.NODE_ENV === 'production' 
-      ? ["https://genbetstracker2.vercel.app"] 
-      : ["http://localhost:5173", "http://localhost:3000"],
-    methods: ["GET", "POST"]
-  }
-});
+
+// Only set up Socket.io in development
+let io: Server | null = null;
+if (process.env.NODE_ENV !== 'production') {
+  io = new Server(server, {
+    cors: {
+      origin: ["http://localhost:5173", "http://localhost:3000"],
+      methods: ["GET", "POST"]
+    }
+  });
+}
 
 app.use(cors());
 app.use(express.json());
@@ -195,14 +198,16 @@ app.get('/api/bets/stats', (req, res) => {
   }
 });
 
-// Socket.io connection
-io.on('connection', (socket) => {
-  console.log('Client connected');
-  
-  socket.on('disconnect', () => {
-    console.log('Client disconnected');
+// Socket.io connection (only in development)
+if (io) {
+  io.on('connection', (socket) => {
+    console.log('Client connected');
+    
+    socket.on('disconnect', () => {
+      console.log('Client disconnected');
+    });
   });
-});
+}
 
 // Initialize today's games on startup
 if (oddsService && gameMonitor) {

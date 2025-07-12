@@ -7,7 +7,7 @@ export class GameMonitor {
   private oddsService: OddsService;
   private telegramService: TelegramService;
   private betAnalyzer: BetAnalyzer;
-  private io: Server;
+  private io: Server | null;
   private processedGames: Set<string> = new Set();
   private currentOpportunities: BetOpportunity[] = [];
 
@@ -15,7 +15,7 @@ export class GameMonitor {
     oddsService: OddsService,
     telegramService: TelegramService,
     betAnalyzer: BetAnalyzer,
-    io: Server
+    io: Server | null
   ) {
     this.oddsService = oddsService;
     this.telegramService = telegramService;
@@ -41,7 +41,9 @@ export class GameMonitor {
       }
 
       // Emit updated opportunities to connected clients
-      this.io.emit('opportunities-update', this.currentOpportunities);
+      if (this.io) {
+        this.io.emit('opportunities-update', this.currentOpportunities);
+      }
 
     } catch (error) {
       console.error('Error checking games:', error);

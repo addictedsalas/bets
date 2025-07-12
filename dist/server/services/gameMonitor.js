@@ -25,7 +25,9 @@ class GameMonitor {
                 await this.analyzeGame(game);
             }
             // Emit updated opportunities to connected clients
-            this.io.emit('opportunities-update', this.currentOpportunities);
+            if (this.io) {
+                this.io.emit('opportunities-update', this.currentOpportunities);
+            }
         }
         catch (error) {
             console.error('Error checking games:', error);

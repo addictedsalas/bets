@@ -17,14 +17,16 @@ const betTracker_1 = require("./services/betTracker");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const server = (0, http_1.createServer)(app);
-const io = new socket_io_1.Server(server, {
-    cors: {
-        origin: process.env.NODE_ENV === 'production'
-            ? ["https://genbetstracker2.vercel.app"]
-            : ["http://localhost:5173", "http://localhost:3000"],
-        methods: ["GET", "POST"]
-    }
-});
+// Only set up Socket.io in development
+let io = null;
+if (process.env.NODE_ENV !== 'production') {
+    io = new socket_io_1.Server(server, {
+        cors: {
+            origin: ["http://localhost:5173", "http://localhost:3000"],
+            methods: ["GET", "POST"]
+        }
+    });
+}
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 const PORT = process.env.PORT || 3000;
@@ -189,13 +191,15 @@ app.get('/api/bets/stats', (req, res) => {
         res.status(500).json({ error: 'Failed to fetch betting stats' });
     }
 });
-// Socket.io connection
-io.on('connection', (socket) => {
-    console.log('Client connected');
-    socket.on('disconnect', () => {
-        console.log('Client disconnected');
+// Socket.io connection (only in development)
+if (io) {
+    io.on('connection', (socket) => {
+        console.log('Client connected');
+        socket.on('disconnect', () => {
+            console.log('Client disconnected');
+        });
     });
-});
+}
 // Initialize today's games on startup
 if (oddsService && gameMonitor) {
     (async () => {
