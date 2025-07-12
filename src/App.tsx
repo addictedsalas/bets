@@ -27,7 +27,7 @@ function App() {
 
   useEffect(() => {
     const socketUrl = process.env.NODE_ENV === 'production' 
-      ? 'https://genbetstracker.vercel.app' 
+      ? 'https://genbetstracker2.vercel.app' 
       : 'http://localhost:3000';
     const newSocket = io(socketUrl);
     setSocket(newSocket);

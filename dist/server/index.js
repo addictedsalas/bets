@@ -20,7 +20,7 @@ const server = (0, http_1.createServer)(app);
 const io = new socket_io_1.Server(server, {
     cors: {
         origin: process.env.NODE_ENV === 'production'
-            ? ["https://genbetstracker.vercel.app"]
+            ? ["https://genbetstracker2.vercel.app"]
             : ["http://localhost:5173", "http://localhost:3000"],
         methods: ["GET", "POST"]
     }
@@ -145,7 +145,7 @@ node_cron_1.default.schedule('0 * * * *', () => {
 server.listen(PORT, () => {
     console.log(`🏀 Basketball Bet Tracker running on port ${PORT}`);
     if (process.env.NODE_ENV === 'production') {
-        console.log(`📊 Dashboard: https://genbetstracker.vercel.app`);
+        console.log(`📊 Dashboard: https://genbetstracker2.vercel.app`);
     }
     else {
         console.log(`📊 Dashboard: http://localhost:5173`);
